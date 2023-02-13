@@ -39,8 +39,12 @@ export default class Sketch {
             1000
         )
 
-        this.camera.position.set(0, 0, 20)
+        this.camera.position.set(1.377324613945763, -0.02874848137823341, 4.9857456502165847)
         this.zoomSpeed = 0.01
+
+        window.addEventListener('mousewheel', () => {
+            console.log(this.camera.position)
+        })
 
         this.controls = new OrbitControls(this.camera, this.renderer.domElement)
         this.time = 0
@@ -72,10 +76,10 @@ export default class Sketch {
     settings() {
         // let that = this
         this.settings = {
-            progress: 0,
-            scale: 1,
-            timeChange: 1,
-            cosChange: 1,
+            progress: 1,
+            scale: 2,
+            timeChange: 0.4,
+            cosChange: 1.07,
         }
         this.gui = new dat.GUI()
         this.gui.add(this.settings, 'progress', 0, 1, 0.01)
@@ -84,9 +88,17 @@ export default class Sketch {
         this.gui.add(this.settings, 'timeChange', 0, 10, 0.001)
     }
 
-    // setupResize() {
-    //   window.addEventListener("resize", this.resize.bind(this));
-    // }
+    setupResize() {
+        window.addEventListener('resize', () => {
+            //Update Size
+            sizes.width = window.innerWidth;
+            sizes.height = window.innerHeight;
+            //Update Camera
+            camera.aspect = sizes.width / sizes.height
+            camera.updateProjectionMatrix()
+            renderer.setSize(sizes.width, sizes.height)
+        })
+    }
 
     addObjects() {
         // let that = this
