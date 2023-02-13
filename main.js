@@ -1,95 +1,148 @@
-import * as THREE from 'three';
-import './style.css'
-import gsap from 'gsap';
+import * as dat from 'dat.gui'
+import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
 
-//Scene
-const scene = new THREE.Scene()
+import './style.css'
 
-//Create our sphere
-const geometry = new THREE.SphereGeometry(3, 64, 64)
-const material = new THREE.MeshStandardMaterial({ color: '#00ff83', roughness: 0.5 })
+import { CustomPass } from './CustomPass'
+import t1 from './img/1.jpg'
+import t2 from './img/2.jpg'
+import t3 from './img/3.jpg'
+import fragment from './shader/fragment.glsl'
+import vertex from './shader/vertex.glsl'
 
-const mesh = new THREE.Mesh(geometry, material)
-scene.add(mesh)
+export default class Sketch {
+    constructor(options) {
+        this.scene = new THREE.Scene()
 
-//Sizes
-const sizes = {
-    width: window.innerWidth,
-    height: window.innerHeight,
-}
+        this.urls = [t1, t2, t3]
+        this.textures = this.urls.map((url) => new THREE.TextureLoader().load(url))
 
-//Light
-const light = new THREE.PointLight(0xffffff, 1, 100)
-light.position.set(0, 10, 10)
-light.intensity = 1.25
-scene.add(light)
+        this.container = options.dom
+        this.width = this.container.offsetWidth
+        this.height = this.container.offsetHeight
+        this.renderer = new THREE.WebGLRenderer()
+        this.renderer.setPixelRatio(window.devicePixelRatio)
+        this.renderer.setSize(this.width, this.height)
+        this.renderer.setClearColor(0x000000, 1)
+        this.renderer.outputEncoding = THREE.sRGBEncoding
 
-//Camera
-const camera = new THREE.PerspectiveCamera(45, sizes.width / sizes.height, 0.1, 100)
-camera.position.z = 30
-scene.add(camera)
+        this.container.appendChild(this.renderer.domElement)
 
-//Rendering
-const canvas = document.querySelector('.webgl')
-const renderer = new THREE.WebGLRenderer({ canvas })
-renderer.setSize(sizes.width, sizes.height)
-renderer.setPixelRatio(2)
-renderer.render(scene, camera)
+        this.camera = new THREE.PerspectiveCamera(
+            70,
+            window.innerWidth / window.innerHeight,
+            0.001,
+            1000
+        )
 
-//Controls
-const controls = new OrbitControls(camera, canvas)
-controls.enableDamping = true
-controls.enablePan = false
-controls.enableZoom = false
-controls.autoRotate = true
-controls.autoRotateSpeed = 5
+        this.camera.position.set(0, 0, 20)
+        this.zoomSpeed = 0.01
 
-//Resize
-window.addEventListener('resize', () => {
-    //Update Size
-    sizes.width = window.innerWidth;
-    sizes.height = window.innerHeight;
-    //Update Camera
-    camera.aspect = sizes.width / sizes.height
-    camera.updateProjectionMatrix()
-    renderer.setSize(sizes.width, sizes.height)
-})
+        this.controls = new OrbitControls(this.camera, this.renderer.domElement)
+        this.time = 0
 
-const loop = () => {
-    controls.update()
-    renderer.render(scene, camera);
-    window.requestAnimationFrame(loop);
-}
-loop()
+        this.isPlaying = true
 
+        this.initPost()
 
-//Timeline magic
-const tl = gsap.timeline({ defaults: { duration: 1 } })
-tl.fromTo(mesh.scale, { z: 0, x: 0, y: 0 }, { z: 1, x: 1, y: 1 })
-tl.fromTo('nav', { y: '-100%' }, { y: '0%' })
-tl.fromTo('.title', { opacity: 0 }, { opacity: 1 })
-
-//Mouse animation color
-let mouseDown = false
-let rgb = [12, 23, 55]
-window.addEventListener('mousedown', () => (mouseDown = true))
-window.addEventListener('mouseup', () => (mouseDown = false))
-
-
-window.addEventListener('mousemove', (e) => {
-    if (mouseDown) {
-        rgb = [
-            Math.round((e.pageX / sizes.width) * 255),
-            Math.round((e.pageY / sizes.width) * 255),
-            150,
-        ]
+        this.addObjects()
+        this.render()
+        // this.setupResize();
+        this.settings()
     }
-    //Let's animate
-    let newColor = new THREE.Color(`rgb(${rgb.join(',')})`)
-    gsap.to(mesh.material.color, {
-        r: newColor.r,
-        g: newColor.g,
-        b: newColor.b,
-    })
+
+    initPost() {
+        // postprocessing
+
+        this.composer = new EffectComposer(this.renderer)
+        this.composer.addPass(new RenderPass(this.scene, this.camera))
+
+        this.effect1 = new ShaderPass(CustomPass)
+        this.composer.addPass(this.effect1)
+
+        // const effect2 = new ShaderPass(RGBShiftShader);
+        // effect2.uniforms['amount'].value = 0.0015;
+        // this.composer.addPass(effect2);
+    }
+
+    settings() {
+        // let that = this
+        this.settings = {
+            progress: 0,
+            scale: 1,
+            timeChange: 1,
+            cosChange: 1,
+        }
+        this.gui = new dat.GUI()
+        this.gui.add(this.settings, 'progress', 0, 1, 0.01)
+        this.gui.add(this.settings, 'scale', 0, 2, 0.001)
+        this.gui.add(this.settings, 'cosChange', 0, 10, 0.001)
+        this.gui.add(this.settings, 'timeChange', 0, 10, 0.001)
+    }
+
+    // setupResize() {
+    //   window.addEventListener("resize", this.resize.bind(this));
+    // }
+
+    addObjects() {
+        // let that = this
+        this.material = new THREE.ShaderMaterial({
+            extensions: {
+                derivatives: '#extension GL_OES_standard_derivatives : enable',
+            },
+            side: THREE.DoubleSide,
+            uniforms: {
+                time: { type: 'f', value: 0 },
+                uTexture: { value: this.textures[0] },
+                resolution: { type: 'v4', value: new THREE.Vector4() },
+                uvRate1: {
+                    value: new THREE.Vector2(1, 1),
+                },
+            },
+            // wireframe: true,
+            // transparent: true,
+            vertexShader: vertex,
+            fragmentShader: fragment,
+        })
+
+        this.geometry = new THREE.PlaneGeometry(1.9 / 2, 1 / 2, 1, 1)
+
+        this.meshes = []
+
+        this.textures.forEach((t, i) => {
+            let m = this.material.clone()
+            m.uniforms.uTexture.value = t
+            let mesh = new THREE.Mesh(this.geometry, m)
+            this.scene.add(mesh)
+            this.meshes.push(mesh)
+            mesh.position.x = i - 1
+            // mesh.position.y = -1;
+        })
+    }
+
+    render() {
+        this.meshes.forEach((m) => {
+            // m.position.y = -this.settings.progress;
+            m.position.z = (this.settings.progress * Math.PI) / 2
+        })
+        this.time += 0.01
+        this.material.uniforms.time.value = this.time
+
+        this.effect1.uniforms['time'].value = this.time
+        this.effect1.uniforms['progress'].value = this.settings.progress
+        this.effect1.uniforms['scale'].value = this.settings.scale
+        this.effect1.uniforms['timeChange'].value = this.settings.timeChange
+        this.effect1.uniforms['cosChange'].value = this.settings.cosChange
+        requestAnimationFrame(this.render.bind(this))
+        // this.renderer.render(this.scene, this.camera);
+        this.composer.render()
+    }
+}
+
+new Sketch({
+    dom: document.getElementById('container'),
 })
