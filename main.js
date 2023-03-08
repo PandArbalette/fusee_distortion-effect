@@ -39,7 +39,7 @@ export default class Sketch {
             1000
         )
 
-        this.camera.position.set(1.377324613945763, -0.02874848137823341, 4.9857456502165847)
+        this.camera.position.set(1.377324613945763, -0.02874848137823341, 20.9857456502165847)
         this.zoomSpeed = 0.01
 
         window.addEventListener('mousewheel', () => {
@@ -77,15 +77,15 @@ export default class Sketch {
         // let that = this
         this.settings = {
             progress: 1,
-            scale: 2,
+            scale: 0.779,
             timeChange: 0.4,
             cosChange: 1.07,
         }
-        // this.gui = new dat.GUI()
-        // this.gui.add(this.settings, 'progress', 0, 1, 0.01)
-        // this.gui.add(this.settings, 'scale', 0, 2, 0.001)
-        // this.gui.add(this.settings, 'cosChange', 0, 10, 0.001)
-        // this.gui.add(this.settings, 'timeChange', 0, 10, 0.001)
+        this.gui = new dat.GUI()
+        this.gui.add(this.settings, 'progress', 0, 1, 0.01)
+        this.gui.add(this.settings, 'scale', 0, 2, 0.001)
+        this.gui.add(this.settings, 'cosChange', 0, 10, 0.001)
+        this.gui.add(this.settings, 'timeChange', 0, 10, 0.001)
     }
 
     setupResize() {
