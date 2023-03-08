@@ -5,7 +5,32 @@
 canvas {
   display: block;
 }
+
+body{
+  background-color: black;
+  position: relative;
+}
+
 #container {
   width: 100vw;
   height: 100vh;
+  z-index: 10;
+  position: relative;
+
 }
+
+/* .cc {
+  position: absolute;
+  color: aliceblue;
+  margin: auto;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  font-size: 10rem;
+  z-index: 10;
+  top: 0;
+  left: 0%;
+  z-index: 0;
+} */
