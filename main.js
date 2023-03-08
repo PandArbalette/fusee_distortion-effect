@@ -81,11 +81,11 @@ export default class Sketch {
             timeChange: 0.4,
             cosChange: 1.07,
         }
-        this.gui = new dat.GUI()
-        this.gui.add(this.settings, 'progress', 0, 1, 0.01)
-        this.gui.add(this.settings, 'scale', 0, 2, 0.001)
-        this.gui.add(this.settings, 'cosChange', 0, 10, 0.001)
-        this.gui.add(this.settings, 'timeChange', 0, 10, 0.001)
+        // this.gui = new dat.GUI()
+        // this.gui.add(this.settings, 'progress', 0, 1, 0.01)
+        // this.gui.add(this.settings, 'scale', 0, 2, 0.001)
+        // this.gui.add(this.settings, 'cosChange', 0, 10, 0.001)
+        // this.gui.add(this.settings, 'timeChange', 0, 10, 0.001)
     }
 
     setupResize() {
